@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Bell,
   Menu,
@@ -37,11 +37,7 @@ const HeroAdmin = () => {
     is_active: true
   });
 
-  useEffect(() => {
-    fetchSlides();
-  }, []);
-
-  const fetchSlides = async () => {
+  const fetchSlides = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/hero.php`);
       if (res.ok) {
@@ -53,7 +49,11 @@ const HeroAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL]);
+
+  useEffect(() => {
+    fetchSlides();
+  }, [fetchSlides]);
 
   const handleFormChange = (e) => {
     const { name, value, type, checked, files } = e.target;

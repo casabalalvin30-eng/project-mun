@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Users, Target, Zap, Award, Linkedin, Github, Mail, X, Sparkles, ChevronRight } from 'lucide-react';
+import { Users, Target, Zap, Award, Linkedin, Github, Mail, X, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 // Animated counter with intersection observer
@@ -82,15 +82,6 @@ const useRevealAnimation = (ref) => {
   useEffect(() => {
     const reveals = ref.current?.querySelectorAll('.reveal');
     if (!reveals?.length) return;
-
-    // Immediately activate elements already in viewport
-    const checkAndActivate = (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting || entry.boundingClientRect.top < window.innerHeight) {
-          entry.target.classList.add('active');
-        }
-      });
-    };
 
     const observer = new IntersectionObserver(
       (entries) => {

@@ -2,25 +2,24 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, ArrowRight, Play, Pause, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+const DEFAULT_SLIDES = [
+  {
+    id: 1,
+    title: 'We Build Digital Experiences',
+    subtitle: 'Creative Solutions',
+    description: 'We are a team of passionate developers crafting innovative web solutions for modern businesses.',
+    button_text: 'View Portfolio',
+    button_link: '#portfolio',
+    image_url: null
+  }
+];
+
 const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const { settings, API_URL } = useAuth();
   const [slides, setSlides] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Default slides fallback
-  const defaultSlides = [
-    {
-      id: 1,
-      title: 'We Build Digital Experiences',
-      subtitle: 'Creative Solutions',
-      description: 'We are a team of passionate developers crafting innovative web solutions for modern businesses.',
-      button_text: 'View Portfolio',
-      button_link: '#portfolio',
-      image_url: null
-    }
-  ];
 
   // Fetch slides from API
   useEffect(() => {
@@ -30,13 +29,13 @@ const Hero = () => {
         if (response.ok) {
           const data = await response.json();
           const activeSlides = data.filter(slide => slide.is_active !== false);
-          setSlides(activeSlides.length > 0 ? activeSlides : defaultSlides);
+          setSlides(activeSlides.length > 0 ? activeSlides : DEFAULT_SLIDES);
         } else {
-          setSlides(defaultSlides);
+          setSlides(DEFAULT_SLIDES);
         }
       } catch (err) {
         console.error('Error fetching hero slides:', err);
-        setSlides(defaultSlides);
+        setSlides(DEFAULT_SLIDES);
       } finally {
         setLoading(false);
       }
@@ -66,7 +65,7 @@ const Hero = () => {
     return () => clearInterval(interval);
   }, [isAutoPlaying, nextSlide, slides.length]);
 
-  const currentSlideData = slides[currentSlide] || defaultSlides[0];
+  const currentSlideData = slides[currentSlide] || DEFAULT_SLIDES[0];
   const [progress, setProgress] = useState(0);
 
   // Progress bar animation

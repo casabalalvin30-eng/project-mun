@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Bell,
   Search,
@@ -6,8 +6,6 @@ import {
   Plus,
   Edit3,
   Trash2,
-  Save,
-  X,
   Star,
   Quote,
   User,
@@ -15,8 +13,6 @@ import {
   Image as ImageIcon,
   Eye,
   EyeOff,
-  ArrowUp,
-  ArrowDown,
   MessageCircle
 } from 'lucide-react';
 import Sidebar from '../Sidebar';
@@ -41,11 +37,7 @@ const TestimonialsAdmin = () => {
     display_order: 0
   });
 
-  useEffect(() => {
-    fetchTestimonials();
-  }, []);
-
-  const fetchTestimonials = async () => {
+  const fetchTestimonials = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/testimonials.php`);
       if (response.ok) {
@@ -57,7 +49,11 @@ const TestimonialsAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL]);
+
+  useEffect(() => {
+    fetchTestimonials();
+  }, [fetchTestimonials]);
 
   const handleNewTestimonial = () => {
     setEditingTestimonial(null);

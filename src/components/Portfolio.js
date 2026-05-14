@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ExternalLink, Github, Eye, ArrowUpRight, Sparkles, Play, Pause, X } from 'lucide-react';
+import { ExternalLink, Github, Eye, ArrowUpRight, Sparkles, Play, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const defaultProjects = [

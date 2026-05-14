@@ -1,10 +1,10 @@
 import React from 'react';
-import { Mail, Phone, MapPin, ArrowUp, Github, Linkedin, Facebook, Twitter, Heart, Sparkles, ExternalLink, ChevronRight } from 'lucide-react';
+import { Mail, Phone, MapPin, ArrowUp, Github, Linkedin, Facebook, Twitter, Heart, Sparkles, ChevronRight } from 'lucide-react';
 import munLogo from '../assets/images/MUN.png';
 import { useAuth } from '../context/AuthContext';
 
 const Footer = () => {
-  const { settings, teamMembers, services } = useAuth();
+  const { settings, services } = useAuth();
   
   const servicesList = services || [
     { title: 'Web Development' },
@@ -14,13 +14,6 @@ const Footer = () => {
     { title: 'Maintenance' }
   ];
   
-  const teamList = teamMembers || [
-    { name: 'Ruben Albao', role: 'Project Lead' },
-    { name: 'Kristian Gomez', role: 'Frontend Dev' },
-    { name: 'Jonelle Mayari', role: 'UI/UX Designer' },
-    { name: 'Alvin Panganiban', role: 'Full Stack Dev' }
-  ];
-
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

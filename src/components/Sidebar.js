@@ -1,16 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   FolderKanban,
   Settings,
   LogOut,
-  Plus,
   Layers,
   MessageCircle,
   Cpu,
-  Bell,
-  User,
   Users,
   Image
 } from 'lucide-react';
@@ -20,15 +17,7 @@ import { useAuth } from '../context/AuthContext';
 const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, projects, services, testimonials, skills } = useAuth();
-  const [notificationCount, setNotificationCount] = useState(0);
-
-  useEffect(() => {
-    // Calculate notifications based on pending items
-    const pendingProjects = projects?.filter(p => p.status === 'Pending').length || 0;
-    const inactiveServices = services?.filter(s => !s.is_active).length || 0;
-    setNotificationCount(pendingProjects + inactiveServices);
-  }, [projects, services]);
+  const { user } = useAuth();
 
   const handleLogout = () => {
     navigate('/login');

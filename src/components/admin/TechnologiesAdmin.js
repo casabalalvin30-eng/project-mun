@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Bell,
   Search,
@@ -6,8 +6,6 @@ import {
   Plus,
   Edit3,
   Trash2,
-  Save,
-  X,
   Cpu,
   Palette,
   Code,
@@ -25,8 +23,7 @@ import {
   HardDrive,
   Wifi,
   Eye,
-  EyeOff,
-  Sliders
+  EyeOff
 } from 'lucide-react';
 import Sidebar from '../Sidebar';
 import { useAuth } from '../../context/AuthContext';
@@ -77,11 +74,7 @@ const TechnologiesAdmin = () => {
     display_order: 0
   });
 
-  useEffect(() => {
-    fetchSkills();
-  }, []);
-
-  const fetchSkills = async () => {
+  const fetchSkills = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/skills.php`);
       if (response.ok) {
@@ -93,7 +86,11 @@ const TechnologiesAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL]);
+
+  useEffect(() => {
+    fetchSkills();
+  }, [fetchSkills]);
 
   const handleNewSkill = () => {
     setEditingSkill(null);
@@ -297,6 +294,9 @@ const TechnologiesAdmin = () => {
                     
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                       {categorySkills.map((skill) => (
+                        (() => {
+                          const SkillIcon = iconMap[skill.icon] || Cpu;
+                          return (
                         <div 
                           key={skill.id}
                           className={`relative group rounded-2xl border p-4 transition-all ${
@@ -310,10 +310,7 @@ const TechnologiesAdmin = () => {
                               className="w-10 h-10 rounded-xl flex items-center justify-center"
                               style={{ backgroundColor: skill.color + '20' }}
                             >
-                              <div 
-                                className="w-4 h-4 rounded"
-                                style={{ backgroundColor: skill.color }}
-                              />
+                              <SkillIcon className="w-5 h-5" style={{ color: skill.color }} />
                             </div>
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button 
@@ -360,6 +357,8 @@ const TechnologiesAdmin = () => {
                             Order: {skill.display_order}
                           </div>
                         </div>
+                          );
+                        })()
                       ))}
                     </div>
                   </div>

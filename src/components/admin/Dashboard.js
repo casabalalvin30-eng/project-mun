@@ -1,19 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Bell,
   Search,
   Menu,
   TrendingUp,
-  DollarSign,
   Calendar,
-  CheckCircle,
   Clock,
   ArrowUpRight,
   ArrowDownRight,
   MoreHorizontal,
   Users,
   FolderKanban,
-  Code,
   Layout,
   MessageSquare,
   Zap
@@ -32,11 +29,7 @@ const Dashboard = () => {
   const [recentActivity, setRecentActivity] = useState([]);
   const { API_URL } = useAuth();
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       const [projectsRes, servicesRes, testimonialsRes, skillsRes] = await Promise.all([
         fetch(`${API_URL}/projects.php`),
@@ -113,7 +106,11 @@ const Dashboard = () => {
       console.error('Error fetching dashboard data:', err);
       setStats(prev => prev.map(s => ({ ...s, loading: false })));
     }
-  };
+  }, [API_URL]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const recentProjects = [
     { name: 'E-Commerce Platform', client: 'TechStore Inc.', status: 'In Progress', progress: 75, deadline: 'Dec 15' },

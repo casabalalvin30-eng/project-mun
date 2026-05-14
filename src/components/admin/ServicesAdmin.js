@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Bell,
   Search,
@@ -6,8 +6,6 @@ import {
   Plus,
   Edit3,
   Trash2,
-  GripVertical,
-  Save,
   X,
   Code,
   Palette,
@@ -48,9 +46,7 @@ import {
   Calendar,
   Clock,
   Bell as BellIcon,
-  Search as SearchIcon,
-  Filter,
-  MoreHorizontal
+  Search as SearchIcon
 } from 'lucide-react';
 import Sidebar from '../Sidebar';
 import { useAuth } from '../../context/AuthContext';
@@ -92,11 +88,7 @@ const ServicesAdmin = () => {
 
   const [newFeature, setNewFeature] = useState('');
 
-  useEffect(() => {
-    fetchServices();
-  }, []);
-
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/services.php`);
       if (response.ok) {
@@ -108,7 +100,11 @@ const ServicesAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL]);
+
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
 
   const handleNewService = () => {
     setEditingService(null);

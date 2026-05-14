@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Sparkles, Cpu, Zap, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Technologies = () => {
   const sectionRef = useRef(null);
-  const { skills, loading } = useAuth();
+  const { skills } = useAuth();
 
   const defaultSkills = [
     { name: 'React.js', category: 'Frontend', color: '#61DAFB' },

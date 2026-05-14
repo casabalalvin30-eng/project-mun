@@ -4,25 +4,25 @@ import { Menu, X, Sparkles, ArrowRight } from 'lucide-react';
 import munLogo from '../assets/images/MUN.png';
 import { useAuth } from '../context/AuthContext';
 
+const NAV_LINKS = [
+  { name: 'Home', href: '#home', id: 'home' },
+  { name: 'About', href: '#about', id: 'about' },
+  { name: 'Services', href: '#services', id: 'services' },
+  { name: 'Portfolio', href: '#portfolio', id: 'portfolio' },
+  { name: 'Testimonials', href: '#testimonials', id: 'testimonials' },
+  { name: 'Tech', href: '#technologies', id: 'technologies' },
+  { name: 'Contact', href: '#contact', id: 'contact' }
+];
+
 const Navbar = ({ scrolled, mobileMenuOpen, setMobileMenuOpen }) => {
   const { settings } = useAuth();
   const siteTitle = settings.site_title || 'Project MUN';
   const [activeLink, setActiveLink] = useState('home');
 
-  const navLinks = [
-    { name: 'Home', href: '#home', id: 'home' },
-    { name: 'About', href: '#about', id: 'about' },
-    { name: 'Services', href: '#services', id: 'services' },
-    { name: 'Portfolio', href: '#portfolio', id: 'portfolio' },
-    { name: 'Testimonials', href: '#testimonials', id: 'testimonials' },
-    { name: 'Tech', href: '#technologies', id: 'technologies' },
-    { name: 'Contact', href: '#contact', id: 'contact' }
-  ];
-
   // Track active section based on scroll position
   useEffect(() => {
     const handleScroll = () => {
-      const sections = navLinks.map(link => document.querySelector(link.href));
+      const sections = NAV_LINKS.map(link => document.querySelector(link.href));
       const scrollPosition = window.scrollY + 100;
 
       sections.forEach((section, index) => {
@@ -30,7 +30,7 @@ const Navbar = ({ scrolled, mobileMenuOpen, setMobileMenuOpen }) => {
           const sectionTop = section.offsetTop;
           const sectionHeight = section.offsetHeight;
           if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
-            setActiveLink(navLinks[index].id);
+            setActiveLink(NAV_LINKS[index].id);
           }
         }
       });
@@ -69,7 +69,7 @@ const Navbar = ({ scrolled, mobileMenuOpen, setMobileMenuOpen }) => {
 
           {/* Enhanced Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
+            {NAV_LINKS.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
@@ -149,7 +149,7 @@ const Navbar = ({ scrolled, mobileMenuOpen, setMobileMenuOpen }) => {
                 </div>
               </div>
 
-              {navLinks.map((link, index) => (
+              {NAV_LINKS.map((link, index) => (
                 <a
                   key={link.name}
                   href={link.href}

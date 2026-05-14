@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Bell,
   Menu,
@@ -10,8 +10,7 @@ import {
   Linkedin,
   Github,
   Mail,
-  Upload,
-  Image
+  Upload
 } from 'lucide-react';
 import Sidebar from '../Sidebar';
 import { useAuth } from '../../context/AuthContext';
@@ -42,11 +41,7 @@ const AboutAdmin = () => {
     image_url: ''
   });
 
-  useEffect(() => {
-    fetchTeamData();
-  }, []);
-
-  const fetchTeamData = async () => {
+  const fetchTeamData = useCallback(async () => {
     try {
       const teamRes = await fetch(`${API_URL}/team.php`);
 
@@ -59,7 +54,11 @@ const AboutAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL]);
+
+  useEffect(() => {
+    fetchTeamData();
+  }, [fetchTeamData]);
 
   const handleNewMember = () => {
     setEditingItem(null);

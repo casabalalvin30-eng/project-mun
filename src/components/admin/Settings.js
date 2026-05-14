@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Bell,
-  Search,
   Menu,
   User,
   Shield,
@@ -13,7 +12,6 @@ import {
   Camera,
   Eye,
   EyeOff,
-  ChevronRight,
   Check,
   Loader2
 } from 'lucide-react';
