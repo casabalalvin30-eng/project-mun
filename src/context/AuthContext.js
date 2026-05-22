@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const API_URL = 'http://projectmun.kesug.com/backend/api';
-
+const API_URL = 'https://projectmun.kesug.com/backend/api';
 const AuthContext = createContext(null);
 
 export const useAuth = () => {
