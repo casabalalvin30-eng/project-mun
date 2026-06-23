@@ -221,6 +221,17 @@ const Projects = () => {
 
   const handleEditProject = (project) => {
     setEditingProject(project);
+    
+    // Load existing images
+    const existingImages = [];
+    if (project.image_url) existingImages.push(project.image_url);
+    if (project.img_two_url) existingImages.push(project.img_two_url);
+    
+    // Load existing videos
+    const existingVideos = [];
+    if (project.video_url) existingVideos.push(project.video_url);
+    if (project.video_two_url) existingVideos.push(project.video_two_url);
+    
     setFormData({
       name: project.title || project.name || '',
       client: project.description || project.client || '',
@@ -229,8 +240,8 @@ const Projects = () => {
       images: [],
       videos: []
     });
-    setImagePreviews([]);
-    setVideoPreviews([]);
+    setImagePreviews(existingImages);
+    setVideoPreviews(existingVideos);
     setShowModal(true);
   };
 
