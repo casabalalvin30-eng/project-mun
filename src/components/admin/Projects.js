@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Bell,
   Search,
@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import Sidebar from '../Sidebar';
 import { useAuth } from '../../context/AuthContext';
-import { deleteRow, saveRow, uploadMedia } from '../../lib/supabaseApi';
+import { deleteRow, listRows, saveRow, uploadMedia } from '../../lib/supabaseApi';
 
 const Projects = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -26,6 +26,8 @@ const Projects = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [viewingProject, setViewingProject] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [localProjects, setLocalProjects] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     client: '',
@@ -37,6 +39,10 @@ const Projects = () => {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [videoPreviews, setVideoPreviews] = useState([]);
   const { projects, loading } = useAuth();
+
+  useEffect(() => {
+    setLocalProjects(projects || []);
+  }, [projects]);
 
   const defaultProjects = [
     { 
@@ -107,7 +113,7 @@ const Projects = () => {
     }
   ];
 
-  const projectsList = projects && projects.length > 0 ? projects : defaultProjects;
+  const projectsList = localProjects && localProjects.length > 0 ? localProjects : defaultProjects;
 
    // Map database fields to frontend fields
   const projectsListMapped = projectsList.map(project => ({
@@ -233,9 +239,10 @@ const Projects = () => {
     
     try {
       await deleteRow('projects', projectId);
-      window.location.reload();
+      setLocalProjects(await listRows('projects'));
     } catch (err) {
       console.error('Delete error:', err);
+      alert(err.message || 'Failed to delete project.');
     }
   };
 
@@ -254,6 +261,8 @@ const Projects = () => {
       return;
     }
     
+    setSaving(true);
+
     try {
       const imageUrl = formData.images?.[0]
         ? await uploadMedia(formData.images[0], 'projects')
@@ -276,10 +285,23 @@ const Projects = () => {
         video_two_url: videoTwoUrl
       });
       setShowModal(false);
-      window.location.reload();
+      setEditingProject(null);
+      setFormData({
+        name: '',
+        client: '',
+        status: 'Pending',
+        category: 'Web Development',
+        images: [],
+        videos: []
+      });
+      setImagePreviews([]);
+      setVideoPreviews([]);
+      setLocalProjects(await listRows('projects'));
     } catch (err) {
       console.error('Save error:', err);
-      alert('An error occurred. Please try again.');
+      alert(err.message || 'An error occurred. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -641,9 +663,10 @@ className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gr
                       </button>
                       <button
                         type="submit"
-                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={saving}
+                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        {editingProject ? 'Update Project' : 'Create Project'}
+                        {saving ? 'Saving...' : editingProject ? 'Update Project' : 'Create Project'}
                       </button>
                    </div>
                  </form>

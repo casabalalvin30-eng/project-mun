@@ -119,12 +119,17 @@ insert into public.settings (id) values (1) on conflict (id) do nothing;
 -- The app logs in against public.admin_users, not Supabase Auth.
 insert into public.admin_users (email, password_hash, name, role)
 values (
-  'admin@projectmun.com',
-  extensions.crypt('ChangeMe123!', extensions.gen_salt('bf')),
+  'admin@gmail.com',
+  extensions.crypt('password', extensions.gen_salt('bf')),
   'Project MUN Admin',
   'Administrator'
 )
-on conflict (email) do nothing;
+on conflict (email) do update
+set password_hash = excluded.password_hash,
+    name = excluded.name,
+    role = excluded.role,
+    is_active = true,
+    updated_at = now();
 
 insert into storage.buckets (id, name, public)
 values ('media', 'media', true)
