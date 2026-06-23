@@ -168,13 +168,13 @@ const MemberCard = ({ member, index, onClick }) => {
           <p className="text-sm font-semibold mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{member.role}</p>
           <p className="text-gray-400 text-sm leading-relaxed flex-grow">{member.description}</p>
           <div className="flex gap-3 mt-5 pt-4 border-t border-white/10">
-            <a href={member.socials.linkedin} className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-blue-600 transition-all duration-300">
+            <a href={member.socials?.linkedin || '#'} className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-blue-600 transition-all duration-300">
               <Linkedin className="w-4 h-4" />
             </a>
-            <a href={member.socials.github} className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-all duration-300">
+            <a href={member.socials?.github || '#'} className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-all duration-300">
               <Github className="w-4 h-4" />
             </a>
-            <a href={member.socials.email} className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-red-500 transition-all duration-300">
+            <a href={member.socials?.email || '#'} className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-red-500 transition-all duration-300">
               <Mail className="w-4 h-4" />
             </a>
           </div>
