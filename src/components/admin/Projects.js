@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import Sidebar from '../Sidebar';
 import { useAuth } from '../../context/AuthContext';
+import { deleteRow, saveRow, uploadMedia } from '../../lib/supabaseApi';
 
 const Projects = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -35,7 +36,7 @@ const Projects = () => {
   });
   const [imagePreviews, setImagePreviews] = useState([]);
   const [videoPreviews, setVideoPreviews] = useState([]);
-  const { projects, loading, API_URL } = useAuth();
+  const { projects, loading } = useAuth();
 
   const defaultProjects = [
     { 
@@ -113,7 +114,10 @@ const Projects = () => {
     id: project.id,
     name: project.title,
     client: project.description,
-    status: project.category || 'Pending',
+    title: project.title,
+    description: project.description,
+    category: project.category,
+    status: project.status || 'Pending',
     image_url: project.image_url,
     project_url: project.project_url,
     video_url: project.video_url,
@@ -228,11 +232,7 @@ const Projects = () => {
     if (!window.confirm('Are you sure you want to delete this project?')) return;
     
     try {
-      await fetch(`${API_URL}/projects.php`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: projectId })
-      });
+      await deleteRow('projects', projectId);
       window.location.reload();
     } catch (err) {
       console.error('Delete error:', err);
@@ -255,45 +255,28 @@ const Projects = () => {
     }
     
     try {
-      const formDataToSend = new FormData();
-      
-      formDataToSend.append('title', name);
-      formDataToSend.append('description', client);
-      formDataToSend.append('category', formData.category);
-      formDataToSend.append('video_url', '');
-      formDataToSend.append('video_two_url', '');
-      
-      if (formData.images && formData.images.length > 0) {
-        formData.images.forEach(img => {
-          formDataToSend.append('images[]', img);
-        });
-      } else if (formData.image) {
-        formDataToSend.append('images[]', formData.image);
-      }
-      if (formData.videos && formData.videos.length > 0) {
-        formData.videos.forEach(vid => {
-          formDataToSend.append('videos[]', vid);
-        });
-      }
-      
-      if (editingProject) {
-        formDataToSend.append('id', editingProject.id);
-        formDataToSend.append('_method', 'PUT');
-      }
-        
-      const response = await fetch(`${API_URL}/projects.php`, {
-        method: 'POST',
-        body: formDataToSend
+      const imageUrl = formData.images?.[0]
+        ? await uploadMedia(formData.images[0], 'projects')
+        : editingProject?.image_url || null;
+      const videoUrl = formData.videos?.[0]
+        ? await uploadMedia(formData.videos[0], 'projects')
+        : editingProject?.video_url || null;
+      const videoTwoUrl = formData.videos?.[1]
+        ? await uploadMedia(formData.videos[1], 'projects')
+        : editingProject?.video_two_url || null;
+
+      await saveRow('projects', {
+        ...(editingProject ? { id: editingProject.id } : {}),
+        title: name,
+        description: client,
+        category: formData.category,
+        status: formData.status,
+        image_url: imageUrl,
+        video_url: videoUrl,
+        video_two_url: videoTwoUrl
       });
-      
-      const result = await response.json();
-      
-      if (response.ok && !result.error) {
-        setShowModal(false);
-        window.location.reload();
-      } else {
-        alert(result.error || 'Failed to save project. Please try again.');
-      }
+      setShowModal(false);
+      window.location.reload();
     } catch (err) {
       console.error('Save error:', err);
       alert('An error occurred. Please try again.');

@@ -26,7 +26,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import Sidebar from '../Sidebar';
-import { useAuth } from '../../context/AuthContext';
+import { deleteRow, listRows, saveRow } from '../../lib/supabaseApi';
 
 const iconMap = {
   Code, Database, Globe, Layout, Terminal, GitBranch, Layers, Zap, Box, 
@@ -63,7 +63,6 @@ const TechnologiesAdmin = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingSkill, setEditingSkill] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const { API_URL } = useAuth();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -76,17 +75,14 @@ const TechnologiesAdmin = () => {
 
   const fetchSkills = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/skills.php`);
-      if (response.ok) {
-        const data = await response.json();
-        setSkills(data);
-      }
+      const data = await listRows('skills');
+      setSkills(data);
     } catch (err) {
       console.error('Error fetching skills:', err);
     } finally {
       setLoading(false);
     }
-  }, [API_URL]);
+  }, []);
 
   useEffect(() => {
     fetchSkills();
@@ -122,15 +118,8 @@ const TechnologiesAdmin = () => {
     if (!window.confirm('Are you sure you want to delete this skill?')) return;
     
     try {
-      const response = await fetch(`${API_URL}/skills.php`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: skillId })
-      });
-      
-      if (response.ok) {
-        fetchSkills();
-      }
+      await deleteRow('skills', skillId);
+      fetchSkills();
     } catch (err) {
       console.error('Delete error:', err);
     }
@@ -145,25 +134,9 @@ const TechnologiesAdmin = () => {
     }
     
     try {
-      const url = `${API_URL}/skills.php`;
-      const method = editingSkill ? 'PUT' : 'POST';
-      const body = editingSkill 
-        ? { ...formData, id: editingSkill.id }
-        : formData;
-      
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      
-      if (response.ok) {
-        setShowModal(false);
-        fetchSkills();
-      } else {
-        const result = await response.json();
-        alert(result.error || 'Failed to save skill.');
-      }
+      await saveRow('skills', editingSkill ? { ...formData, id: editingSkill.id } : formData);
+      setShowModal(false);
+      fetchSkills();
     } catch (err) {
       console.error('Save error:', err);
       alert('An error occurred. Please try again.');
@@ -172,18 +145,8 @@ const TechnologiesAdmin = () => {
 
   const handleToggleActive = async (skill) => {
     try {
-      const response = await fetch(`${API_URL}/skills.php`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: skill.id,
-          is_active: !skill.is_active
-        })
-      });
-      
-      if (response.ok) {
-        fetchSkills();
-      }
+      await saveRow('skills', { id: skill.id, is_active: !skill.is_active });
+      fetchSkills();
     } catch (err) {
       console.error('Toggle error:', err);
     }

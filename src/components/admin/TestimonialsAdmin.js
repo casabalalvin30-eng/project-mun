@@ -16,7 +16,7 @@ import {
   MessageCircle
 } from 'lucide-react';
 import Sidebar from '../Sidebar';
-import { useAuth } from '../../context/AuthContext';
+import { deleteRow, listRows, saveRow } from '../../lib/supabaseApi';
 
 const TestimonialsAdmin = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -25,7 +25,6 @@ const TestimonialsAdmin = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingTestimonial, setEditingTestimonial] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const { API_URL } = useAuth();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -39,17 +38,14 @@ const TestimonialsAdmin = () => {
 
   const fetchTestimonials = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/testimonials.php`);
-      if (response.ok) {
-        const data = await response.json();
-        setTestimonials(data);
-      }
+      const data = await listRows('testimonials');
+      setTestimonials(data);
     } catch (err) {
       console.error('Error fetching testimonials:', err);
     } finally {
       setLoading(false);
     }
-  }, [API_URL]);
+  }, []);
 
   useEffect(() => {
     fetchTestimonials();
@@ -87,15 +83,8 @@ const TestimonialsAdmin = () => {
     if (!window.confirm('Are you sure you want to delete this testimonial?')) return;
     
     try {
-      const response = await fetch(`${API_URL}/testimonials.php`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: testimonialId })
-      });
-      
-      if (response.ok) {
-        fetchTestimonials();
-      }
+      await deleteRow('testimonials', testimonialId);
+      fetchTestimonials();
     } catch (err) {
       console.error('Delete error:', err);
     }
@@ -110,25 +99,9 @@ const TestimonialsAdmin = () => {
     }
     
     try {
-      const url = `${API_URL}/testimonials.php`;
-      const method = editingTestimonial ? 'PUT' : 'POST';
-      const body = editingTestimonial 
-        ? { ...formData, id: editingTestimonial.id }
-        : formData;
-      
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      
-      if (response.ok) {
-        setShowModal(false);
-        fetchTestimonials();
-      } else {
-        const result = await response.json();
-        alert(result.error || 'Failed to save testimonial.');
-      }
+      await saveRow('testimonials', editingTestimonial ? { ...formData, id: editingTestimonial.id } : formData);
+      setShowModal(false);
+      fetchTestimonials();
     } catch (err) {
       console.error('Save error:', err);
       alert('An error occurred. Please try again.');
@@ -137,18 +110,8 @@ const TestimonialsAdmin = () => {
 
   const handleToggleActive = async (testimonial) => {
     try {
-      const response = await fetch(`${API_URL}/testimonials.php`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: testimonial.id,
-          is_active: !testimonial.is_active
-        })
-      });
-      
-      if (response.ok) {
-        fetchTestimonials();
-      }
+      await saveRow('testimonials', { id: testimonial.id, is_active: !testimonial.is_active });
+      fetchTestimonials();
     } catch (err) {
       console.error('Toggle error:', err);
     }

@@ -13,7 +13,7 @@ import {
   Upload
 } from 'lucide-react';
 import Sidebar from '../Sidebar';
-import { useAuth } from '../../context/AuthContext';
+import { deleteRow, listRows, saveRow, uploadMedia } from '../../lib/supabaseApi';
 
 
 const AboutAdmin = () => {
@@ -23,7 +23,6 @@ const AboutAdmin = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const { API_URL } = useAuth();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -43,18 +42,14 @@ const AboutAdmin = () => {
 
   const fetchTeamData = useCallback(async () => {
     try {
-      const teamRes = await fetch(`${API_URL}/team.php`);
-
-      if (teamRes.ok) {
-        const teamData = await teamRes.json();
-        setTeamMembers(teamData);
-      }
+      const teamData = await listRows('team_members');
+      setTeamMembers(teamData);
     } catch (err) {
       console.error('Error fetching team data:', err);
     } finally {
       setLoading(false);
     }
-  }, [API_URL]);
+  }, []);
 
   useEffect(() => {
     fetchTeamData();
@@ -115,14 +110,8 @@ const AboutAdmin = () => {
     if (!window.confirm('Are you sure you want to delete this team member?')) return;
 
     try {
-      const response = await fetch(`${API_URL}/team.php?id=${itemId}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      if (response.ok) {
-        fetchTeamData();
-      }
+      await deleteRow('team_members', itemId);
+      fetchTeamData();
     } catch (err) {
       console.error('Delete error:', err);
     }
@@ -131,22 +120,23 @@ const AboutAdmin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const method = editingItem ? 'PUT' : 'POST';
-    const body = editingItem
-      ? { ...formData, id: editingItem.id }
-      : formData;
-
     try {
-      const response = await fetch(`${API_URL}/team.php`, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+      const imageUrl = formData.image
+        ? await uploadMedia(formData.image, 'team')
+        : formData.image_url;
+      await saveRow('team_members', {
+        ...(editingItem ? { id: editingItem.id } : {}),
+        name: formData.name,
+        role: formData.role,
+        initials: formData.initials,
+        description: formData.description,
+        linkedin: formData.linkedin,
+        github: formData.github,
+        email: formData.email,
+        image_url: imageUrl
       });
-
-      if (response.ok) {
-        setShowModal(false);
-        fetchTeamData();
-      }
+      setShowModal(false);
+      fetchTeamData();
     } catch (err) {
       console.error('Submit error:', err);
     }

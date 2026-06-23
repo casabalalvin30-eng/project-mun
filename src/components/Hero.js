@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, ArrowRight, Play, Pause, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { listRows } from '../lib/supabaseApi';
 
 const DEFAULT_SLIDES = [
   {
@@ -17,7 +18,7 @@ const DEFAULT_SLIDES = [
 const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const { settings, API_URL } = useAuth();
+  const { settings } = useAuth();
   const [slides, setSlides] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,14 +26,9 @@ const Hero = () => {
   useEffect(() => {
     const fetchSlides = async () => {
       try {
-        const response = await fetch(`${API_URL}/hero.php`);
-        if (response.ok) {
-          const data = await response.json();
-          const activeSlides = data.filter(slide => slide.is_active !== false);
-          setSlides(activeSlides.length > 0 ? activeSlides : DEFAULT_SLIDES);
-        } else {
-          setSlides(DEFAULT_SLIDES);
-        }
+        const data = await listRows('hero_slides');
+        const activeSlides = data.filter(slide => slide.is_active !== false);
+        setSlides(activeSlides.length > 0 ? activeSlides : DEFAULT_SLIDES);
       } catch (err) {
         console.error('Error fetching hero slides:', err);
         setSlides(DEFAULT_SLIDES);
@@ -42,7 +38,7 @@ const Hero = () => {
     };
 
     fetchSlides();
-  }, [API_URL]);
+  }, []);
 
   const nextSlide = useCallback(() => {
     if (slides.length <= 1) return;

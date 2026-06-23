@@ -13,7 +13,7 @@ import {
   Eye
 } from 'lucide-react';
 import Sidebar from '../Sidebar';
-import { useAuth } from '../../context/AuthContext';
+import { deleteRow, listRows, saveRow, uploadMedia } from '../../lib/supabaseApi';
 
 const HeroAdmin = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -23,7 +23,6 @@ const HeroAdmin = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const { API_URL } = useAuth();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -39,17 +38,14 @@ const HeroAdmin = () => {
 
   const fetchSlides = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/hero.php`);
-      if (res.ok) {
-        const data = await res.json();
-        setSlides(data);
-      }
+      const data = await listRows('hero_slides');
+      setSlides(data);
     } catch (err) {
       console.error('Error fetching slides:', err);
     } finally {
       setLoading(false);
     }
-  }, [API_URL]);
+  }, []);
 
   useEffect(() => {
     fetchSlides();
@@ -114,9 +110,7 @@ const HeroAdmin = () => {
     if (!window.confirm('Are you sure you want to delete this slide?')) return;
     
     try {
-      await fetch(`${API_URL}/hero.php?id=${id}`, {
-        method: 'DELETE'
-      });
+      await deleteRow('hero_slides', id);
       fetchSlides();
     } catch (err) {
       console.error('Delete error:', err);
@@ -132,38 +126,24 @@ const HeroAdmin = () => {
     }
 
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('subtitle', formData.subtitle);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('button_text', formData.button_text);
-      formDataToSend.append('button_link', formData.button_link);
-      formDataToSend.append('display_order', formData.display_order);
-      formDataToSend.append('is_active', formData.is_active ? '1' : '0');
-      
-      if (formData.image) {
-        formDataToSend.append('image', formData.image);
-      }
-      
-      if (editingItem) {
-        formDataToSend.append('id', editingItem.id);
-        formDataToSend.append('_method', 'PUT');
-      }
-      
-      const response = await fetch(`${API_URL}/hero.php`, {
-        method: 'POST',
-        body: formDataToSend
+      const imageUrl = formData.image
+        ? await uploadMedia(formData.image, 'hero')
+        : formData.image_url;
+
+      await saveRow('hero_slides', {
+        ...(editingItem ? { id: editingItem.id } : {}),
+        title: formData.title,
+        subtitle: formData.subtitle,
+        description: formData.description,
+        button_text: formData.button_text,
+        button_link: formData.button_link,
+        display_order: Number(formData.display_order) || 0,
+        is_active: Boolean(formData.is_active),
+        image_url: imageUrl
       });
-      
-      const result = await response.json();
-      
-      if (response.ok && !result.error) {
-        setShowModal(false);
-        setImagePreview(null);
-        fetchSlides();
-      } else {
-        alert(result.error || 'Failed to save slide. Please try again.');
-      }
+      setShowModal(false);
+      setImagePreview(null);
+      fetchSlides();
     } catch (err) {
       console.error('Submit error:', err);
       alert('An error occurred. Please try again.');
@@ -180,20 +160,7 @@ const HeroAdmin = () => {
     // Update display order
     try {
       await Promise.all(newSlides.map((slide, i) => 
-        fetch(`${API_URL}/hero.php`, {
-          method: 'POST',
-          body: new URLSearchParams({
-            id: slide.id,
-            _method: 'PUT',
-            title: slide.title,
-            subtitle: slide.subtitle || '',
-            description: slide.description || '',
-            button_text: slide.button_text || '',
-            button_link: slide.button_link || '',
-            display_order: i,
-            is_active: slide.is_active ? '1' : '0'
-          })
-        })
+        saveRow('hero_slides', { ...slide, display_order: i })
       ));
       fetchSlides();
     } catch (err) {

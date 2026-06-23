@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mail, MapPin, Phone, Send, Linkedin, Github, Facebook, Twitter, CheckCircle, Sparkles, MessageSquare, Clock, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { submitContactMessage } from '../lib/supabaseApi';
 
 const Contact = () => {
   const sectionRef = useRef(null);
-  const { settings, API_URL } = useAuth();
+  const { settings } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -55,21 +56,10 @@ const Contact = () => {
     setError('');
 
     try {
-      const response = await fetch(`${API_URL}/contact.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setIsSubmitted(true);
-        setFormData({ name: '', email: '', subject: '', message: '' });
-        setTimeout(() => setIsSubmitted(false), 3000);
-      } else {
-        setError(data.error || 'Failed to send message');
-      }
+      await submitContactMessage(formData);
+      setIsSubmitted(true);
+      setFormData({ name: '', email: '', subject: '', message: '' });
+      setTimeout(() => setIsSubmitted(false), 3000);
     } catch (err) {
       setError('Network error. Please try again.');
     } finally {

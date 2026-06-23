@@ -16,7 +16,7 @@ import {
   Zap
 } from 'lucide-react';
 import Sidebar from '../Sidebar';
-import { useAuth } from '../../context/AuthContext';
+import { listRows } from '../../lib/supabaseApi';
 
 const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -27,21 +27,15 @@ const Dashboard = () => {
     { title: 'Technologies', value: '0', change: '0%', trend: 'up', icon: Zap, color: 'orange', loading: true }
   ]);
   const [recentActivity, setRecentActivity] = useState([]);
-  const { API_URL } = useAuth();
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      const [projectsRes, servicesRes, testimonialsRes, skillsRes] = await Promise.all([
-        fetch(`${API_URL}/projects.php`),
-        fetch(`${API_URL}/services.php`),
-        fetch(`${API_URL}/testimonials.php`),
-        fetch(`${API_URL}/skills.php`)
+      const [projects, services, testimonials, skills] = await Promise.all([
+        listRows('projects'),
+        listRows('services'),
+        listRows('testimonials'),
+        listRows('skills')
       ]);
-
-      const projects = projectsRes.ok ? await projectsRes.json() : [];
-      const services = servicesRes.ok ? await servicesRes.json() : [];
-      const testimonials = testimonialsRes.ok ? await testimonialsRes.json() : [];
-      const skills = skillsRes.ok ? await skillsRes.json() : [];
 
       const activeProjects = projects.filter(p => p.status !== 'Completed').length;
       const activeServices = services.filter(s => s.is_active !== false).length;
@@ -106,7 +100,7 @@ const Dashboard = () => {
       console.error('Error fetching dashboard data:', err);
       setStats(prev => prev.map(s => ({ ...s, loading: false })));
     }
-  }, [API_URL]);
+  }, []);
 
   useEffect(() => {
     fetchDashboardData();

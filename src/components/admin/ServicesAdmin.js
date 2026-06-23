@@ -49,7 +49,7 @@ import {
   Search as SearchIcon
 } from 'lucide-react';
 import Sidebar from '../Sidebar';
-import { useAuth } from '../../context/AuthContext';
+import { deleteRow, listRows, saveRow } from '../../lib/supabaseApi';
 
 const iconMap = {
   Code, Palette, Database, Globe, Smartphone, Layout, Monitor, Cloud, Shield, Zap, Settings, Layers, Server, Cpu, Wifi, HardDrive, Terminal, Box, Grid, Component, FileCode, PenTool, Image, Video, Music, BarChart3, PieChart, LineChart, Activity, Heart, Star, ThumbsUp, MessageCircle, Mail, Phone, MapPin, Calendar, Clock, BellIcon, SearchIcon
@@ -75,7 +75,6 @@ const ServicesAdmin = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingService, setEditingService] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const { API_URL } = useAuth();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -90,17 +89,14 @@ const ServicesAdmin = () => {
 
   const fetchServices = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/services.php`);
-      if (response.ok) {
-        const data = await response.json();
-        setServices(data);
-      }
+      const data = await listRows('services');
+      setServices(data);
     } catch (err) {
       console.error('Error fetching services:', err);
     } finally {
       setLoading(false);
     }
-  }, [API_URL]);
+  }, []);
 
   useEffect(() => {
     fetchServices();
@@ -136,15 +132,8 @@ const ServicesAdmin = () => {
     if (!window.confirm('Are you sure you want to delete this service?')) return;
     
     try {
-      const response = await fetch(`${API_URL}/services.php`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: serviceId })
-      });
-      
-      if (response.ok) {
-        fetchServices();
-      }
+      await deleteRow('services', serviceId);
+      fetchServices();
     } catch (err) {
       console.error('Delete error:', err);
     }
@@ -159,25 +148,9 @@ const ServicesAdmin = () => {
     }
     
     try {
-      const url = `${API_URL}/services.php`;
-      const method = editingService ? 'PUT' : 'POST';
-      const body = editingService 
-        ? { ...formData, id: editingService.id }
-        : formData;
-      
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      
-      if (response.ok) {
-        setShowModal(false);
-        fetchServices();
-      } else {
-        const result = await response.json();
-        alert(result.error || 'Failed to save service.');
-      }
+      await saveRow('services', editingService ? { ...formData, id: editingService.id } : formData);
+      setShowModal(false);
+      fetchServices();
     } catch (err) {
       console.error('Save error:', err);
       alert('An error occurred. Please try again.');

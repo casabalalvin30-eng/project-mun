@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
+import { getSettings, listRows, updateSettingsRow } from '../lib/supabaseApi';
 
-const API_URL = 'https://projectmun.kesug.com/backend/api';
 const AuthContext = createContext(null);
 
 export const useAuth = () => {
@@ -24,52 +25,57 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await fetch(`${API_URL}/login.php`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password })
+      const { data, error } = await supabase.rpc('verify_admin_login', {
+        login_email: email,
+        login_password: password
       });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        return { success: true };
-      } else {
-        return { success: false, message: data.message || 'Login failed' };
-      }
+      if (error) return { success: false, message: error.message || 'Login failed' };
+      if (!data?.success) return { success: false, message: data?.message || 'Invalid email or password' };
+
+      const authUser = {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name || data.user.email,
+        role: data.user.role || 'Administrator',
+        phone: data.user.phone || '',
+        location: data.user.location || '',
+        bio: data.user.bio || ''
+      };
+
+      setUser(authUser);
+      localStorage.setItem('user', JSON.stringify(authUser));
+      return { success: true };
     } catch (err) {
       return { success: false, message: 'Server error. Please try again later.' };
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
     localStorage.removeItem('user');
   };
 
   const updateUser = async (userData) => {
     try {
-      const response = await fetch(`${API_URL}/settings.php`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ...userData, action: 'update_profile' })
+      if (!user?.id) return { success: false, message: 'No admin user is logged in' };
+      const { data, error } = await supabase.rpc('update_admin_profile', {
+        admin_id: user.id,
+        admin_name: userData.name,
+        admin_email: userData.email,
+        admin_role: userData.role,
+        admin_phone: userData.phone,
+        admin_location: userData.location,
+        admin_bio: userData.bio
       });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setUser({ ...user, ...userData });
-        localStorage.setItem('user', JSON.stringify({ ...user, ...userData }));
-        return { success: true };
-      } else {
-        return { success: false, message: data.message || 'Failed to update profile' };
-      }
+      if (error) return { success: false, message: error.message || 'Failed to update profile' };
+
+      const nextUser = {
+        ...user,
+        ...data
+      };
+      setUser(nextUser);
+      localStorage.setItem('user', JSON.stringify(nextUser));
+      return { success: true };
     } catch (err) {
       return { success: false, message: 'Server error. Please try again later.' };
     }
@@ -77,57 +83,32 @@ export const AuthProvider = ({ children }) => {
 
   const updateSettings = async (settingsData) => {
     try {
-      const response = await fetch(`${API_URL}/settings.php`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(settingsData)
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setSettings({ ...settings, ...settingsData });
-        return { success: true };
-      } else {
-        return { success: false, message: data.message || 'Failed to update settings' };
-      }
+      const data = await updateSettingsRow(settingsData);
+      setSettings({ ...settings, ...data });
+      return { success: true };
     } catch (err) {
       return { success: false, message: 'Server error. Please try again later.' };
     }
   };
 
   useEffect(() => {
-    // Check for saved user session
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        localStorage.removeItem('user');
-      }
-    }
-
     const fetchAllData = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const fetchWithDefault = async (endpoint, setState, defaultData) => {
+        const fetchWithDefault = async (loader, setState, defaultData) => {
           try {
-            const response = await fetch(`${API_URL}/${endpoint}`);
-            if (!response.ok) throw new Error('Failed to fetch');
-            const data = await response.json();
-            setState(data.length > 0 ? data : defaultData);
+            const data = await loader();
+            setState(Array.isArray(data) ? (data.length > 0 ? data : defaultData) : (Object.keys(data).length > 0 ? data : defaultData));
           } catch (err) {
-            console.error(`Error fetching ${endpoint}:`, err);
+            console.error('Error fetching Supabase data:', err);
             setState(defaultData);
           }
         };
 
         await Promise.all([
-          fetchWithDefault('settings.php', setSettings, {
+          fetchWithDefault(getSettings, setSettings, {
             site_title: 'Project MUN',
             site_email: 'projectmun.team@gmail.com',
             site_phone: '+63 (XXX) XXX-XXXX',
@@ -137,13 +118,13 @@ export const AuthProvider = ({ children }) => {
             site_facebook: '#',
             site_twitter: '#'
           }),
-          fetchWithDefault('team.php', setTeamMembers, [
+          fetchWithDefault(() => listRows('team_members'), setTeamMembers, [
             { name: 'Ruben Albao', role: 'Frontend Developer', description: 'Expert in React, JavaScript, and modern frontend frameworks.', initials: 'RA', socials: { linkedin: '#', github: '#', email: 'mailto:ruben@projectmun.com' } },
             { name: 'Kristian Gomez', role: 'Frontend Developer', description: 'Specialized in React.js and modern JavaScript.', initials: 'KG', socials: { linkedin: '#', github: '#', email: 'mailto:kristian@projectmun.com' } },
             { name: 'Jonelle Mayari', role: 'Project Manager', description: 'Oversees project timelines and client communication.', initials: 'JM', socials: { linkedin: '#', github: '#', email: 'mailto:jonelle@projectmun.com' } },
             { name: 'Alvin Panganiban', role: 'Backend Developer', description: 'Expert in server-side development and APIs.', initials: 'AP', socials: { linkedin: '#', github: '#', email: 'mailto:alvin@projectmun.com' } }
           ]),
-          fetchWithDefault('services.php', setServices, [
+          fetchWithDefault(() => listRows('services'), setServices, [
             { title: 'Web Development', description: 'Custom web applications built with modern frameworks.', icon: 'Code', color: 'blue', features: ['React.js', 'Node.js', 'RESTful APIs'] },
             { title: 'UI/UX Design', description: 'User-centered design for intuitive digital experiences.', icon: 'Palette', color: 'purple', features: ['Wireframing', 'Prototyping'] },
             { title: 'System Development', description: 'Robust backend systems using PHP and MySQL.', icon: 'Database', color: 'green', features: ['PHP', 'MySQL'] },
@@ -151,7 +132,7 @@ export const AuthProvider = ({ children }) => {
             { title: 'Responsive Design', description: 'Mobile-first approach for all devices.', icon: 'Smartphone', color: 'pink', features: ['Mobile-First'] },
             { title: 'Website Maintenance', description: 'Ongoing support and updates.', icon: 'Layout', color: 'indigo', features: ['Security Updates'] }
           ]),
-          fetchWithDefault('skills.php', setSkills, [
+          fetchWithDefault(() => listRows('skills'), setSkills, [
             { name: 'React.js', category: 'Frontend', color: '#61DAFB' },
             { name: 'JavaScript', category: 'Language', color: '#F7DF1E' },
             { name: 'PHP', category: 'Backend', color: '#777BB4' },
@@ -165,13 +146,13 @@ export const AuthProvider = ({ children }) => {
             { name: 'Java', category: 'Language', color: '#F8981D' },
             { name: 'Electron.js', category: 'Framework', color: '#47848F' }
           ]),
-          fetchWithDefault('testimonials.php', setTestimonials, [
+          fetchWithDefault(() => listRows('testimonials'), setTestimonials, [
             { name: 'Maria Santos', role: 'CEO, TechStart Philippines', content: 'Project MUN delivered an exceptional e-commerce platform.', rating: 5, image_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop' },
             { name: 'John Reyes', role: 'Marketing Director, InnovateCorp', content: 'Working with the Project MUN team was a game-changer.', rating: 5, image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop' },
             { name: 'Sarah Chen', role: 'Founder, EduLearn Platform', content: 'The learning management system they built is incredible.', rating: 5, image_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop' },
             { name: 'David Lim', role: 'Operations Manager, FoodHub PH', content: 'Our restaurant booking system has streamlined operations.', rating: 5, image_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop' }
           ]),
-           fetchWithDefault('projects.php', setProjects, [])
+           fetchWithDefault(() => listRows('projects'), setProjects, [])
         ]);
 
       } catch (err) {
@@ -182,6 +163,15 @@ export const AuthProvider = ({ children }) => {
     };
 
     fetchAllData();
+
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        localStorage.removeItem('user');
+      }
+    }
   }, []);
 
   const value = {
@@ -198,7 +188,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateUser,
     updateSettings,
-    API_URL
+    supabase
   };
 
   return (
